@@ -1,7 +1,8 @@
 use time::macros::date;
 use time::{Date, Duration, Month, Weekday};
 
-use crate::time::{calendar::Calendar, utils};
+use crate::time::calendar::CalendarInterface;
+use crate::time::utils;
 
 /// The `UnitedKingdom` struct represents the United Kingdom calendar.
 /// Equivalent to the QuantLib `UnitedKingdom.Settlement` class.
@@ -68,11 +69,7 @@ impl UnitedKingdom {
     }
 }
 
-impl Calendar for UnitedKingdom {
-    fn new() -> Self {
-        UnitedKingdom
-    }
-
+impl CalendarInterface for UnitedKingdom {
     fn name(&self) -> &'static str {
         "United Kingdom"
     }
@@ -144,9 +141,8 @@ impl Calendar for UnitedKingdom {
 mod test_united_kingdom {
     use std::ffi::CString;
 
-    use crate::time::utils::{MAX_DATE, MIN_DATE};
+    use crate::time::{calendar::Calendar, utils::{MAX_DATE, MIN_DATE}};
 
-    use super::*;
     use pyo3::{
         types::{PyAnyMethods, PyModule, PyModuleMethods},
         Python,
@@ -155,100 +151,93 @@ mod test_united_kingdom {
 
     #[test]
     fn test_name() {
-        let calendar = UnitedKingdom::new();
-        assert_eq!(calendar.name(), "United Kingdom");
+        assert_eq!(Calendar::UnitedKingdom.name(), "United Kingdom");
     }
 
     #[test]
     fn test_weekend() {
-        let calendar = UnitedKingdom::new();
         let weekend_date = date!(2023 - 12 - 23); // Saturday
         assert_eq!(
-            calendar.get_holiday(&weekend_date),
+            Calendar::UnitedKingdom.get_holiday(&weekend_date),
             Some("Weekend".to_string())
         );
     }
 
     #[test]
     fn test_early_may_bank_holiday() {
-        let calendar = UnitedKingdom::new();
         assert_eq!(
-            calendar.get_holiday(&date!(2023 - 05 - 01)),
+            Calendar::UnitedKingdom.get_holiday(&date!(2023 - 05 - 01)),
             Some("Early May Bank Holiday".to_string())
         );
         assert_eq!(
-            calendar.get_holiday(&date!(1995 - 05 - 08)),
+            Calendar::UnitedKingdom.get_holiday(&date!(1995 - 05 - 08)),
             Some("Early May Bank Holiday".to_string())
         );
         assert_eq!(
-            calendar.get_holiday(&date!(2020 - 05 - 08)),
+            Calendar::UnitedKingdom.get_holiday(&date!(2020 - 05 - 08)),
             Some("Early May Bank Holiday".to_string())
         );
     }
 
     #[test]
     fn test_spring_bank_holiday() {
-        let calendar = UnitedKingdom::new();
         assert_eq!(
-            calendar.get_holiday(&date!(2023 - 05 - 29)),
+            Calendar::UnitedKingdom.get_holiday(&date!(2023 - 05 - 29)),
             Some("Spring Bank Holiday".to_string())
         );
         assert_eq!(
-            calendar.get_holiday(&date!(2002 - 06 - 03)),
+            Calendar::UnitedKingdom.get_holiday(&date!(2002 - 06 - 03)),
             Some("Spring Bank Holiday".to_string())
         );
         assert_eq!(
-            calendar.get_holiday(&date!(2002 - 06 - 04)),
+            Calendar::UnitedKingdom.get_holiday(&date!(2002 - 06 - 04)),
             Some("Spring Bank Holiday".to_string())
         );
         assert_eq!(
-            calendar.get_holiday(&date!(2012 - 06 - 04)),
+            Calendar::UnitedKingdom.get_holiday(&date!(2012 - 06 - 04)),
             Some("Spring Bank Holiday".to_string())
         );
         assert_eq!(
-            calendar.get_holiday(&date!(2012 - 06 - 05)),
+            Calendar::UnitedKingdom.get_holiday(&date!(2012 - 06 - 05)),
             Some("Spring Bank Holiday".to_string())
         );
         assert_eq!(
-            calendar.get_holiday(&date!(2022 - 06 - 02)),
+            Calendar::UnitedKingdom.get_holiday(&date!(2022 - 06 - 02)),
             Some("Spring Bank Holiday".to_string())
         );
         assert_eq!(
-            calendar.get_holiday(&date!(2022 - 06 - 03)),
+            Calendar::UnitedKingdom.get_holiday(&date!(2022 - 06 - 03)),
             Some("Spring Bank Holiday".to_string())
         );
     }
 
     #[test]
     fn test_summer_bank_holiday() {
-        let calendar = UnitedKingdom::new();
         assert_eq!(
-            calendar.get_holiday(&date!(2023 - 08 - 28)),
+            Calendar::UnitedKingdom.get_holiday(&date!(2023 - 08 - 28)),
             Some("Summer Bank Holiday".to_string())
         );
     }
 
     #[test]
     fn test_royal_wedding_holiday() {
-        let calendar = UnitedKingdom::new();
         assert_eq!(
-            calendar.get_holiday(&date!(2011 - 04 - 29)),
+            Calendar::UnitedKingdom.get_holiday(&date!(2011 - 04 - 29)),
             Some("Royal Wedding Bank Holiday".to_string())
         );
     }
 
     #[test]
     fn test_queens_funeral() {
-        let calendar = UnitedKingdom::new();
         assert_eq!(
-            calendar.get_holiday(&date!(2022 - 09 - 19)),
+            Calendar::UnitedKingdom.get_holiday(&date!(2022 - 09 - 19)),
             Some("The Queen's Funeral Bank Holiday".to_string())
         );
     }
 
     #[test]
     fn test_kings_coronation() {
-        let calendar = UnitedKingdom::new();
+        let calendar = Calendar::UnitedKingdom;
         assert_eq!(
             calendar.get_holiday(&date!(2023 - 05 - 08)),
             Some("King Charles III Coronation Bank Holiday".to_string())
@@ -257,7 +246,8 @@ mod test_united_kingdom {
 
     #[test]
     fn test_new_years_day() {
-        let calendar = UnitedKingdom::new();
+        let calendar = Calendar::UnitedKingdom;
+
         assert_eq!(
             calendar.get_holiday(&date!(2024 - 01 - 01)),
             Some("New Year's Day".to_string())
@@ -270,7 +260,8 @@ mod test_united_kingdom {
 
     #[test]
     fn test_christmas_and_boxing_day() {
-        let calendar = UnitedKingdom::new();
+        let calendar = Calendar::UnitedKingdom;
+
         assert_eq!(
             calendar.get_holiday(&date!(2024 - 12 - 25)),
             Some("Christmas Day".to_string())
@@ -293,7 +284,7 @@ mod test_united_kingdom {
 
     #[test]
     fn test_good_friday_and_easter_monday() {
-        let calendar = UnitedKingdom::new();
+        let calendar = Calendar::UnitedKingdom;
 
         // Easter Monday 2024 is April 1
         assert_eq!(
@@ -308,7 +299,7 @@ mod test_united_kingdom {
 
     #[test]
     fn test_non_holiday_weekday() {
-        let calendar = UnitedKingdom::new();
+        let calendar = Calendar::UnitedKingdom;
         assert_eq!(calendar.get_holiday(&date!(2023 - 07 - 04)), None); // Regular Tuesday
     }
 
@@ -344,7 +335,7 @@ result = len(holidays)
                 .expect("Failed to extract result as usize")
         });
 
-        let calendar = UnitedKingdom::new();
+        let calendar = Calendar::UnitedKingdom;
         let from = MIN_DATE;
         let to = MAX_DATE;
         let holidays = calendar.construct_holiday_vec(from, to);
@@ -357,7 +348,7 @@ result = len(holidays)
         use std::collections::HashSet;
 
         let rust_holidays: HashSet<_> = {
-            let calendar = UnitedKingdom::new();
+            let calendar = Calendar::UnitedKingdom;
             let from = date!(1950 - 01 - 01);
             let to = date!(2000 - 12 - 31);
             calendar

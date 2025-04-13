@@ -2,14 +2,12 @@ use time::Date;
 
 use crate::time::{calendar::Calendar, period::Period, schedule::Schedule};
 
-pub struct FixedRateBond<C: Calendar> {
-    calendar: C,
+pub struct FixedRateBond {
+    calendar: Calendar,
     issue_date: Date,
     maturity_date: Date,
-    schedule: Schedule<C>,
-    coupon_rate: f64,
+    cash_flows: Vec<CashFlow>,
     face_amount: f64,
-    frequency: Period,
 }
 
 impl FixedRateBond<calendars::UnitedKingdom> {

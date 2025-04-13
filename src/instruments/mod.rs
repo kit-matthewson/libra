@@ -1,1 +1,3 @@
-pub mod fixed_rate_bond;
+mod bond;
+
+pub use bond::*;
