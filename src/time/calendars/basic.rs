@@ -1,4 +1,4 @@
-use crate::time::calendar::CalendarInterface;
+use crate::time::{calendar::CalendarInterface, Date, Month};
 
 /// Basic calendar implementation for demonstration purposes.
 /// Holidays are weekends, New Year's Day, and Christmas Day.
@@ -9,16 +9,16 @@ impl CalendarInterface for BasicCalendar {
         "Basic Calendar"
     }
 
-    fn get_holiday(&self, date: &time::Date) -> Option<String> {
-        if date.weekday() == time::Weekday::Saturday || date.weekday() == time::Weekday::Sunday {
+    fn get_holiday(&self, date: &Date) -> Option<String> {
+        if date.weekday().is_weekend() {
             return Some("Weekend".to_string());
         }
 
-        if date.day() == 1 && date.month() == time::Month::January {
+        if date.day() == 1 && date.month() == Month::January {
             return Some("New Year's Day".to_string());
         }
 
-        if date.day() == 25 && date.month() == time::Month::December {
+        if date.day() == 25 && date.month() == Month::December {
             return Some("Christmas Day".to_string());
         }
 

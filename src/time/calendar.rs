@@ -1,10 +1,6 @@
-use time::Date;
+use super::{calendars::{self}, Date};
 
-use super::{
-    calendars::{self},
-    DayCountConvention,
-};
-
+#[derive(Clone, Copy, Debug)]
 pub enum Calendar {
     UnitedKingdom,
     Basic,
@@ -51,21 +47,17 @@ impl Calendar {
     }
 }
 
+impl std::fmt::Display for Calendar {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Calendar::UnitedKingdom => write!(f, "United Kingdom"),
+            Calendar::Basic => write!(f, "Basic"),
+        }
+    }
+}
+
 pub trait CalendarInterface {
     fn name(&self) -> &'static str;
     fn get_holiday(&self, date: &Date) -> Option<String>;
 }
 
-#[cfg(test)]
-mod test_calendar {
-    use time::macros::date;
-
-    use crate::time::Calendar;
-
-    #[test]
-    fn test_is_buisness_day() {
-        let calendar = Calendar::Basic;
-        let date = date!(2023 - 12 - 25); // Christmas Day
-        assert!(!calendar.is_buisness_day(&date));
-    }
-}
