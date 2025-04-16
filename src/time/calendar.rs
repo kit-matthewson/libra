@@ -1,4 +1,6 @@
-use super::{calendars::{self}, Date};
+use chrono::{Days, NaiveDate};
+
+use super::calendars::{self};
 
 #[derive(Clone, Copy, Debug)]
 pub enum Calendar {
@@ -21,7 +23,7 @@ impl Calendar {
     }
 
     /// Constructs a `Vec` of dates that are holidays between `from` and `to` (inclusive).
-    pub fn construct_holiday_vec(&self, from: Date, to: Date) -> Vec<Date> {
+    pub fn construct_holiday_vec(&self, from: NaiveDate, to: NaiveDate) -> Vec<NaiveDate> {
         let mut holiday_dates = Vec::new();
 
         let mut date = from;
@@ -30,19 +32,21 @@ impl Calendar {
                 holiday_dates.push(date);
             }
 
-            date = date.next_day().expect("could not increment day");
+            date = date
+                .checked_add_days(Days::new(1))
+                .expect("could not increment day");
         }
 
         holiday_dates
     }
 
     /// Gets the holiday on `date`. Returns `Some(name)` if the day is a holiday, or `None` if it is not.
-    pub fn get_holiday(&self, date: &Date) -> Option<String> {
+    pub fn get_holiday(&self, date: &NaiveDate) -> Option<String> {
         self.interface().get_holiday(date)
     }
 
     /// Returns `true` if `date` is a buisness day, or `false` otherwise.
-    pub fn is_buisness_day(&self, date: &Date) -> bool {
+    pub fn is_buisness_day(&self, date: &NaiveDate) -> bool {
         self.get_holiday(date).is_none()
     }
 }
@@ -58,6 +62,5 @@ impl std::fmt::Display for Calendar {
 
 pub trait CalendarInterface {
     fn name(&self) -> &'static str;
-    fn get_holiday(&self, date: &Date) -> Option<String>;
+    fn get_holiday(&self, date: &NaiveDate) -> Option<String>;
 }
-

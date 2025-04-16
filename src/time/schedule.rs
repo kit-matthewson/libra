@@ -1,5 +1,5 @@
-use super::period::Period;
+use chrono::Months;
 
 pub enum Schedule {
-    FixedRate(f64, Period),
+    FixedRate(f64, Months),
 }

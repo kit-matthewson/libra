@@ -1,16 +1,18 @@
 use std::fmt;
 
+use chrono::NaiveDate;
+
 use crate::cashflows::{CashFlow, Coupon};
 
-use crate::time::{Calendar, Date, DateAdjustment, DayCountConvention};
+use crate::time::{Calendar, DateAdjustment, DayCountConvention};
 
 #[derive(Clone, Debug)]
 pub struct Bond {
     calendar: Calendar,
     day_count: DayCountConvention,
     date_adjustment: DateAdjustment,
-    issue_date: Date,
-    maturity_date: Date,
+    issue_date: NaiveDate,
+    maturity_date: NaiveDate,
     face_value: f64,
     coupons: Vec<CashFlow>,
 }
@@ -20,8 +22,8 @@ impl Bond {
         calendar: Calendar,
         day_count: DayCountConvention,
         date_adjustment: DateAdjustment,
-        issue_date: Date,
-        maturity_date: Date,
+        issue_date: NaiveDate,
+        maturity_date: NaiveDate,
         face_value: f64,
         coupons: Coupon,
     ) -> Self {
