@@ -1,21 +1,25 @@
-mod argument_range;
-mod different_variant;
+use thiserror::Error;
 
-pub use argument_range::ArgumentRange;
-pub use different_variant::DifferentVariant;
-
-pub type Result<T> = core::result::Result<T, Error>;
-
-/// A unified Error type for any errors returned by a method in the libra crate.
-///
-/// All error types should implement:
-/// * [`Display`](core::fmt::Display)
-/// * [`Error`](std::error::Error)
-/// * [`From<T> for Error`](core::convert::From)
-/// * [`TryFrom`](core::convert::TryFrom)
-#[derive(Debug)]
+#[derive(Error, Debug)]
 pub enum Error {
-    ArgumentRange(ArgumentRange),
-    DifferentVariant(DifferentVariant),
+    #[error("{name} must be in the range {min}=..{max}, but {value} was provided")]
+    ArgumentRange {
+        name: String,
+        min: i64,
+        max: i64,
+        value: i64,
+    },
+
+    #[error("{name} must be in the range {min}=..{max}, but {value} was provided: {conditional_message}")]
+    ConditionalArgumentRange {
+        name: String,
+        min: i64,
+        max: i64,
+        value: i64,
+        conditional_message: String,
+    },
+
+    #[error("value was of a different variant than required")]
+    DifferentVariant,
 }
 
