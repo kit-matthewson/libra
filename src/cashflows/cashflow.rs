@@ -22,6 +22,10 @@ impl CashFlow {
         self.date
     }
 
+    pub fn value(&self) -> f64 {
+        self.value
+    }
+
     /// The present value of this cash flow using simple interest: PV = FV / (1 + rt)
     ///
     /// # Arguments

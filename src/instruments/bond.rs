@@ -43,37 +43,73 @@ impl Bond {
         }
     }
 
-    pub fn present_value(
+    pub fn dirty_price(
         &self,
         yield_to_maturity: f64,
         today: NaiveDate,
     ) -> Result<f64, InvalidDate> {
-        match self.coupons {
-            None => {
-                let cashflow = CashFlow::new(self.principle, self.maturity_date);
-                cashflow.compound_present_value(&today, yield_to_maturity, self.day_count)
-            }
+        let values = self
+            .cash_flows()
+            .iter()
+            .filter(|c| c.date() >= today)
+            .map(|c| c.compound_present_value(&today, yield_to_maturity, self.day_count))
+            .collect::<Result<Vec<f64>, InvalidDate>>();
 
-            Some(coupons) => {
-                let mut present_value = CashFlow::new(self.principle, self.maturity_date)
-                    .compound_present_value(&today, yield_to_maturity, self.day_count)?;
-
-                // Try and sum all the present values of future coupons
-                let coupon_values: Result<Vec<f64>, InvalidDate> = coupons
-                    .cash_flows(self.issue_date, self.maturity_date, self.principle)?
-                    .iter()
-                    .filter(|c| c.date() >= today)
-                    .map(|c| c.compound_present_value(&today, yield_to_maturity, self.day_count))
-                    .collect();
-
-                match coupon_values {
-                    Ok(values) => present_value += values.iter().sum::<f64>(),
-                    Err(err) => return Err(err),
-                }
-
-                Ok(present_value)
-            }
+        match values {
+            Ok(values) => Ok(values.iter().sum::<f64>()),
+            Err(err) => Err(err),
         }
+    }
+
+    pub fn clean_price(
+        &self,
+        yield_to_maturity: f64,
+        today: NaiveDate,
+    ) -> Result<f64, InvalidDate> {
+        if today > self.maturity_date {
+            return Err(InvalidDate);
+        }
+
+        let cash_flows = self.cash_flows();
+
+        let prev = match cash_flows.iter().position(|c| c.date() > today) {
+            Some(i) => {
+                if i > 0 {
+                    cash_flows.get(i - 1)
+                } else {
+                    None
+                }
+            }
+            None => return Err(InvalidDate),
+        };
+
+        let prev = match prev {
+            Some(p) => p,
+            None => return self.dirty_price(yield_to_maturity, today),
+        };
+
+        let accrued = prev.value() * self.day_count.year_frac(&prev.date(), &today)?;
+
+        Ok(self.dirty_price(yield_to_maturity, today)? - accrued)
+    }
+
+    pub fn cash_flows(&self) -> Vec<CashFlow> {
+        let mut cash_flows = Vec::new();
+
+        match self.coupons {
+            None => {}
+            Some(coupons) => {
+                cash_flows.append(
+                    &mut coupons
+                        .cash_flows(self.issue_date, self.maturity_date, self.principle)
+                        .unwrap(),
+                );
+            }
+        };
+
+        cash_flows.push(CashFlow::new(self.principle, self.maturity_date));
+
+        cash_flows
     }
 }
 

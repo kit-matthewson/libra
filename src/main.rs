@@ -10,7 +10,7 @@ fn main() {
         Calendar::UnitedKingdom,
         DayCountConvention::Thirty360,
         DateAdjustment::Following,
-        NaiveDate::from_ymd_opt(2006, 5, 26).unwrap(),
+        NaiveDate::from_ymd_opt(1999, 5, 26).unwrap(),
         NaiveDate::from_ymd_opt(2009, 5, 26).unwrap(),
         98.0,
         100.0,
@@ -18,7 +18,7 @@ fn main() {
     );
 
     println!(
-        "{:.4}",
-        bond.present_value(0.0544, NaiveDate::from_ymd_opt(2006, 7, 14).unwrap()).unwrap()
+        "{:.2}",
+        bond.clean_price(0.0544, NaiveDate::from_ymd_opt(2006, 7, 14).unwrap()).unwrap()
     );
 }
