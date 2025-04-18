@@ -1,9 +1,11 @@
+use core::error;
 use std::fmt;
 
 use chrono::NaiveDate;
 
-use crate::cashflows::{CashFlow, Coupon};
+use crate::cashflows::{CashFlow, Coupons};
 
+use crate::error::InvalidDate;
 use crate::time::{Calendar, DateAdjustment, DayCountConvention};
 
 #[derive(Clone, Debug)]
@@ -14,7 +16,8 @@ pub struct Bond {
     issue_date: NaiveDate,
     maturity_date: NaiveDate,
     face_value: f64,
-    coupons: Vec<CashFlow>,
+    principle: f64,
+    coupons: Option<Coupons>,
 }
 
 impl Bond {
@@ -25,10 +28,9 @@ impl Bond {
         issue_date: NaiveDate,
         maturity_date: NaiveDate,
         face_value: f64,
-        coupons: Coupon,
+        principle: f64,
+        coupons: Option<Coupons>,
     ) -> Self {
-        let coupons = coupons.cash_flows(issue_date);
-
         Bond {
             calendar,
             day_count,
@@ -36,12 +38,42 @@ impl Bond {
             issue_date,
             maturity_date,
             face_value,
+            principle,
             coupons,
         }
     }
 
-    pub fn present_value(&self) -> f64 {
-        todo!()
+    pub fn present_value(
+        &self,
+        yield_to_maturity: f64,
+        today: NaiveDate,
+    ) -> Result<f64, InvalidDate> {
+        match self.coupons {
+            None => {
+                let cashflow = CashFlow::new(self.principle, self.maturity_date);
+                cashflow.compound_present_value(&today, yield_to_maturity, self.day_count)
+            }
+
+            Some(coupons) => {
+                let mut present_value = CashFlow::new(self.principle, self.maturity_date)
+                    .compound_present_value(&today, yield_to_maturity, self.day_count)?;
+
+                // Try and sum all the present values of future coupons
+                let coupon_values: Result<Vec<f64>, InvalidDate> = coupons
+                    .cash_flows(self.issue_date, self.maturity_date, self.principle)?
+                    .iter()
+                    .filter(|c| c.date() >= today)
+                    .map(|c| c.compound_present_value(&today, yield_to_maturity, self.day_count))
+                    .collect();
+
+                match coupon_values {
+                    Ok(values) => present_value += values.iter().sum::<f64>(),
+                    Err(err) => return Err(err),
+                }
+
+                Ok(present_value)
+            }
+        }
     }
 }
 

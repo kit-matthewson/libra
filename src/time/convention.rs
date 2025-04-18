@@ -1,7 +1,8 @@
-use chrono::Datelike;
-use std::fmt;
+use crate::error;
 
+use chrono::Datelike;
 use chrono::NaiveDate;
+use std::fmt;
 
 /// A day count convention.
 #[derive(Clone, Copy, Debug)]
@@ -14,25 +15,49 @@ pub enum DayCountConvention {
 
 impl DayCountConvention {
     /// Returns the year fraction between `from` and `to` using `day_count_convention`.
-    pub fn year_frac(&self, from: &NaiveDate, to: &NaiveDate) -> f64 {
-        // TODO
-        let year_diff = (to.year() - from.year()) as f64;
+    pub fn year_frac(&self, from: &NaiveDate, to: &NaiveDate) -> Result<f64, error::InvalidDate> {
+        if from > to {
+            return Err(error::InvalidDate);
+        }
 
-        let year_days = match self {
-            DayCountConvention::Actual360 => 360.0,
-            DayCountConvention::Actual365Fixed => 365.0,
-            DayCountConvention::Thirty360 => 360.0,
-            DayCountConvention::ActualActual => {
-                let start_of_year = NaiveDate::from_ymd_opt(from.year(), 1, 1).unwrap();
-                let end_of_year = NaiveDate::from_ymd_opt(from.year(), 12, 31).unwrap();
-                (end_of_year - start_of_year).num_days() as f64 + 1.0
+        match self {
+            DayCountConvention::Actual360 => {
+                let days = (*to - *from).num_days();
+                Ok(days as f64 / 360.0)
             }
-        };
+            DayCountConvention::Actual365Fixed => {
+                let days = (*to - *from).num_days();
+                Ok(days as f64 / 365.0)
+            }
+            DayCountConvention::ActualActual => {
+                todo!()
+            }
+            DayCountConvention::Thirty360 => {
+                // 30/360 US algorithm from ISDA 2006 Section 4.16(f)
 
-        let days =
-            (year_diff * year_days) - (from.ordinal0() as f64 + 1.0) + (to.ordinal0() as f64 + 1.0);
+                let mut d1 = from.day();
+                let m1 = from.month();
+                let y1 = from.year();
 
-        days / year_days
+                let mut d2 = to.day();
+                let m2 = to.month();
+                let y2 = to.year();
+
+                if d2 == 31 && (d1 == 30 || d1 == 31) {
+                    d2 = 30;
+                }
+
+                if d1 == 31 {
+                    d1 = 30;
+                }
+
+                let total_days_360 = ((y2 - y1) * 360
+                    + (m2 as i32 - m1 as i32) * 30
+                    + (d2 as i32 - d1 as i32)) as f64;
+
+                Ok(total_days_360 / 360.0)
+            }
+        }
     }
 }
 
